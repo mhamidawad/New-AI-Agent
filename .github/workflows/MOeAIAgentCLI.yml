@@ -43,7 +43,7 @@ pip install \
   isort>=5.13.0 \
   flake8>=7.0.0 \
   mypy>=1.8.0 \
-  pytest>=8.0.0 \
+  pytest>=8.0.0
   
 
     - name: Run AI Agent CLI
