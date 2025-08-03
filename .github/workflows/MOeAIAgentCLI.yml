@@ -14,13 +14,13 @@ jobs:
           git clone --branch ai-coding-agent https://github.com/mhamidawad/New-AI-Agent.git
           mv New-AI-Agent/ai_coding_agent ./ai-coding-agent
           ls -la ai-coding-agent
-          cd ai-coding-agent
+
 
 
       - name: Install dependencies
         run: |
           pip install --upgrade pip
-          pip install -r ai-coding-agent/requirements.txt
+          pip install -r requirements.txt
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
