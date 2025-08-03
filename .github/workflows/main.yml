@@ -15,7 +15,8 @@ jobs:
           git clone --branch ai-coding-agent https://github.com/mhamidawad/New-AI-Agent.git
           mv New-AI-Agent/ai_coding_agent ./ai-coding-agent
           ls -la ai-coding-agent
-          cd ./ai-coding-agent
+          pwd
+
           pip install --upgrade pip
           pip install -r requirements.txt
 
