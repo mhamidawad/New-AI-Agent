@@ -1,0 +1,279 @@
+name: MOe AI Agent - Build and Deploy
+
+on:
+  push:
+    branches: [main, ai-coding-agent, develop]
+  pull_request:
+    branches: [main]
+  release:
+    types: [published]
+
+env:
+  PYTHON_VERSION: '3.11'
+  NODE_VERSION: '18'
+
+jobs:
+
+  python-agent:
+    name: Python AI Agent Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Cache pip dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-cov pytest-asyncio black flake8 mypy
+
+      - name: Run code formatting check
+        run: black --check --diff ai_coding_agent/ tests/
+
+      - name: Run linting
+        run: |
+          flake8 ai_coding_agent/ tests/ --max-line-length=100 --ignore=E203,W503
+          mypy ai_coding_agent/ --ignore-missing-imports
+
+      - name: Run Python tests
+        run: |
+          pytest tests/ -v --cov=ai_coding_agent --cov-report=xml --cov-report=html
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage.xml
+          flags: python-agent
+          name: python-coverage
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-coverage-report
+          path: htmlcov/
+          retention-days: 30
+
+  vscode-extension:
+    name: VS Code Extension Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: vscode-extension/package-lock.json
+
+      - name: Install dependencies
+        working-directory: vscode-extension
+        run: npm ci
+
+      - name: Compile TypeScript
+        working-directory: vscode-extension
+        run: npm run compile
+
+      - name: Run ESLint
+        working-directory: vscode-extension
+        run: npm run lint
+
+      - name: Run tests
+        working-directory: vscode-extension
+        run: npm test
+        continue-on-error: true
+
+      - name: Build VSIX package
+        working-directory: vscode-extension
+        run: |
+          npm install -g @vscode/vsce
+          vsce package
+
+      - name: Upload VSIX artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-coding-agent-vsix
+          path: vscode-extension/*.vsix
+          retention-days: 30
+
+      - name: Upload build logs
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: vscode-build-logs
+          path: |
+            vscode-extension/out/
+            vscode-extension/node_modules/.cache/
+          retention-days: 7
+
+  security-scan:
+    name: Security Analysis
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v2
+        with:
+          languages: javascript, python
+
+      - name: CodeQL Analysis
+        uses: github/codeql-action/analyze@v2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Run npm audit
+        working-directory: vscode-extension
+        run: npm audit --audit-level=moderate --json > npm-audit.json || true
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Run Python safety check
+        run: |
+          pip install safety
+          safety check --json --output safety-report.json || true
+
+      - name: Upload security reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-reports
+          path: |
+            vscode-extension/npm-audit.json
+            safety-report.json
+          retention-days: 30
+
+  publish-extension:
+    name: Publish to VS Code Marketplace
+    runs-on: ubuntu-latest
+    needs: [python-agent, vscode-extension, security-scan]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install dependencies
+        working-directory: vscode-extension
+        run: npm ci
+
+      - name: Build VSIX
+        working-directory: vscode-extension
+        run: |
+          npm install -g @vscode/vsce
+          vsce package
+
+      - name: Publish to Marketplace
+        working-directory: vscode-extension
+        run: vsce publish
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+
+      - name: Create GitHub Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ github.run_number }}
+          release_name: AI Coding Agent v${{ github.run_number }}
+          body: |
+            🚀 AI Coding Agent v${{ github.run_number }}
+
+            ### Highlights
+            - AI-powered code analysis
+            - Intelligent suggestions
+            - Python + VS Code integration
+
+            👉 Download `.vsix` from assets below and install manually.
+
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: vscode-extension/ai-coding-agent-*.vsix
+          asset_name: ai-coding-agent-v${{ github.run_number }}.vsix
+          asset_content_type: application/octet-stream
+
+  docker-build:
+    name: Docker Image Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker Images
+        run: |
+          docker build -t ai-coding-agent:${{ github.run_number }} .
+          docker tag ai-coding-agent:${{ github.run_number }} ai-coding-agent:latest
+
+  docs:
+    name: Generate Documentation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install Sphinx
+        run: |
+          pip install sphinx sphinx-rtd-theme
+          pip install -r requirements.txt
+
+      - name: Generate HTML docs
+        run: |
+          mkdir -p docs
+          sphinx-quickstart -q -p "AI Coding Agent" -a "MOe AI Agents" -v 1.0 -r 1.0 -l en -n docs
+          sphinx-build -b html docs docs/_build/html
+
+      - name: Upload Docs
+        uses: actions/upload-artifact@v4
+        with:
+          name: documentation
+          path: docs/_build/html/
+          retention-days: 30
+
+  notify:
+    name: Final Notification
+    runs-on: ubuntu-latest
+    needs: [python-agent, vscode-extension, security-scan]
+    if: always()
+    steps:
+      - name: Notify on Success
+        if: success()
+        run: |
+          echo "✅ All jobs completed successfully!"
+
+      - name: Notify on Failure
+        if: failure()
+        run: |
+          echo "❌ Some jobs failed. Please check the logs."
