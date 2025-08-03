@@ -1,0 +1,249 @@
+{
+  "name": "ai-coding-agent",
+  "displayName": "AI Coding Agent",
+  "description": "An intelligent AI-powered coding assistant for code analysis, generation, and assistance",
+  "version": "1.0.0",
+  "publisher": "ai-coding-agent",
+  "engines": {
+    "vscode": "^1.74.0"
+  },
+  "categories": [
+    "Other",
+    "Machine Learning",
+    "Snippets",
+    "Linters"
+  ],
+  "keywords": [
+    "ai",
+    "assistant",
+    "code-generation",
+    "analysis",
+    "openai",
+    "anthropic"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "aiCodingAgent.chat",
+        "title": "Start AI Chat",
+        "category": "AI Coding Agent"
+      },
+      {
+        "command": "aiCodingAgent.analyzeFile",
+        "title": "Analyze Current File",
+        "category": "AI Coding Agent"
+      },
+      {
+        "command": "aiCodingAgent.generateCode",
+        "title": "Generate Code",
+        "category": "AI Coding Agent"
+      },
+      {
+        "command": "aiCodingAgent.reviewCode",
+        "title": "Review Code",
+        "category": "AI Coding Agent"
+      },
+      {
+        "command": "aiCodingAgent.fixCode",
+        "title": "Fix Code Issues",
+        "category": "AI Coding Agent"
+      },
+      {
+        "command": "aiCodingAgent.projectOverview",
+        "title": "Get Project Overview",
+        "category": "AI Coding Agent"
+      },
+      {
+        "command": "aiCodingAgent.openSettings",
+        "title": "Open Settings",
+        "category": "AI Coding Agent"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "aiCodingAgent.analyzeFile",
+          "group": "aiCodingAgent",
+          "when": "editorHasSelection || editorTextFocus"
+        },
+        {
+          "command": "aiCodingAgent.reviewCode",
+          "group": "aiCodingAgent",
+          "when": "editorHasSelection || editorTextFocus"
+        },
+        {
+          "command": "aiCodingAgent.fixCode",
+          "group": "aiCodingAgent",
+          "when": "editorHasSelection || editorTextFocus"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "aiCodingAgent.chat"
+        },
+        {
+          "command": "aiCodingAgent.analyzeFile"
+        },
+        {
+          "command": "aiCodingAgent.generateCode"
+        },
+        {
+          "command": "aiCodingAgent.reviewCode"
+        },
+        {
+          "command": "aiCodingAgent.fixCode"
+        },
+        {
+          "command": "aiCodingAgent.projectOverview"
+        },
+        {
+          "command": "aiCodingAgent.openSettings"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "AI Coding Agent",
+      "properties": {
+        "aiCodingAgent.openaiApiKey": {
+          "type": "string",
+          "default": "",
+          "description": "OpenAI API Key for GPT models",
+          "order": 1
+        },
+        "aiCodingAgent.anthropicApiKey": {
+          "type": "string",
+          "default": "",
+          "description": "Anthropic API Key for Claude models",
+          "order": 2
+        },
+        "aiCodingAgent.defaultModel": {
+          "type": "string",
+          "default": "gpt-4",
+          "enum": [
+            "gpt-4",
+            "gpt-4-turbo",
+            "gpt-3.5-turbo",
+            "claude-3-sonnet-20240229",
+            "claude-3-opus-20240229",
+            "claude-3-haiku-20240307"
+          ],
+          "description": "Default AI model to use",
+          "order": 3
+        },
+        "aiCodingAgent.maxTokens": {
+          "type": "number",
+          "default": 4000,
+          "description": "Maximum tokens for AI responses",
+          "order": 4
+        },
+        "aiCodingAgent.temperature": {
+          "type": "number",
+          "default": 0.1,
+          "minimum": 0,
+          "maximum": 1,
+          "description": "AI model temperature (creativity level)",
+          "order": 5
+        },
+        "aiCodingAgent.debug": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable debug mode",
+          "order": 6
+        },
+        "aiCodingAgent.ignorePatterns": {
+          "type": "array",
+          "default": [
+            "__pycache__",
+            "*.pyc",
+            ".git",
+            "node_modules",
+            "*.min.js",
+            "dist",
+            "build"
+          ],
+          "description": "File patterns to ignore during analysis",
+          "order": 7
+        },
+        "aiCodingAgent.autoSave": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically save files after AI modifications",
+          "order": 8
+        },
+        "aiCodingAgent.showInlineComments": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show inline comments for AI suggestions",
+          "order": 9
+        }
+      }
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "aiCodingAgent",
+          "title": "AI Coding Agent",
+          "icon": "$(robot)"
+        }
+      ]
+    },
+    "views": {
+      "aiCodingAgent": [
+        {
+          "id": "aiCodingAgent.chat",
+          "name": "AI Chat",
+          "type": "webview"
+        },
+        {
+          "id": "aiCodingAgent.history",
+          "name": "Conversation History",
+          "type": "tree"
+        },
+        {
+          "id": "aiCodingAgent.tools",
+          "name": "Quick Tools",
+          "type": "tree"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src --ext ts",
+    "test": "node ./out/test/runTest.js",
+    "package": "vsce package"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.74.0",
+    "@types/node": "16.x",
+    "@typescript-eslint/eslint-plugin": "^5.45.0",
+    "@typescript-eslint/parser": "^5.45.0",
+    "eslint": "^8.28.0",
+    "typescript": "^4.9.4",
+    "@vscode/test-electron": "^2.2.0",
+    "@vscode/vsce": "^2.15.0"
+  },
+  "dependencies": {
+    "openai": "^4.20.0",
+    "@anthropic-ai/sdk": "^0.9.0",
+    "axios": "^1.6.0",
+    "marked": "^9.0.0",
+    "highlight.js": "^11.9.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ai-coding-agent/vscode-extension.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ai-coding-agent/vscode-extension/issues"
+  },
+  "homepage": "https://github.com/ai-coding-agent/vscode-extension#readme",
+  "license": "MIT"
+}

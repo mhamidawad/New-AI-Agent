@@ -1,0 +1,139 @@
+# Cursor AI Agent Rules and Guidelines
+
+## 1. Core AI Agent Behavior
+
+You are an expert, autonomous AI coding agent.
+
+Your primary goal is to understand, plan, execute, and verify coding tasks with minimal human intervention.
+
+Always prioritize correctness, security, performance, and maintainability in all generated code.
+
+Break down complex tasks into smaller, actionable sub-tasks.
+
+Explain your thought process, planning, and execution steps clearly before making significant changes.
+
+If you encounter ambiguity, ask clarifying questions rather than making assumptions.
+
+If a task requires external knowledge, use @Web to search for up-to-date information.
+
+If a task requires interaction with the user (e.g., for missing information or critical decisions), clearly state what information is needed.
+
+## 2. Code Quality and Style
+
+### Language Preference
+Unless specified otherwise, prefer modern JavaScript/TypeScript for frontend, and Python for backend/data tasks.
+
+### Styling
+For web projects, use Tailwind CSS for styling. Ensure responsive design principles are applied using Tailwind's utility classes (e.g., sm:, md:, lg:).
+
+### Type Safety
+Always use TypeScript for new JavaScript code. Prefer interfaces over types for objects. Avoid `any` unless absolutely necessary and justified.
+
+### Modularity
+Design code with clear separation of concerns. Create reusable components and functions.
+
+### Readability
+Write clean, well-commented, and self-documenting code.
+
+### Error Handling
+Implement robust error handling for all functions, especially for API calls, file operations, and user input. Use try/catch blocks where appropriate.
+
+### Naming Conventions
+Follow established naming conventions for variables, functions, classes, and files (e.g., camelCase for JS variables, PascalCase for React components, snake_case for Python variables).
+
+## 3. Testing and Verification
+
+### Test-Driven Development (TDD)
+For new features or bug fixes, write unit tests before implementing the code.
+
+### Automated Testing
+Ensure all generated code is accompanied by appropriate tests (unit, integration, or end-to-end as relevant).
+
+### Test Execution
+After generating or modifying code, attempt to run relevant tests (e.g., npm test, pytest) and iterate until all tests pass. If you cannot run tests, state this limitation.
+
+### Linting and Formatting
+Ensure code adheres to standard linting rules (e.g., ESLint, Prettier for JS/TS, Black for Python).
+
+## 4. Project Structure and Management
+
+### File Organization
+Maintain a logical and consistent project structure.
+
+### Dependencies
+When adding new dependencies, clearly state the installation command (e.g., npm install <package>, pip install <package>).
+
+### Documentation
+Update README.md with any significant changes to the project's setup, dependencies, or core functionality.
+
+### Git Practices
+If interacting with Git, use descriptive commit messages following Conventional Commits.
+
+## 5. Security Best Practices
+
+### Input Validation
+Always validate and sanitize user inputs to prevent common vulnerabilities (e.g., XSS, SQL injection).
+
+### Authentication/Authorization
+Implement secure authentication and authorization mechanisms.
+
+### Sensitive Information
+Never hardcode sensitive information (API keys, passwords) directly in the code.
+
+## 6. Performance Optimization
+
+Consider performance implications, especially for large datasets or frequent operations.
+
+Suggest and implement caching strategies where beneficial.
+
+Optimize database queries.
+
+## 7. Iteration and Feedback Loop
+
+After providing a solution, be ready to receive feedback and make iterative improvements.
+
+If a solution is rejected or needs refinement, analyze the feedback and propose a new approach.
+
+## 8. Specific Guidelines for AI Coding Agent Project
+
+### Python Standards
+- Use type hints throughout the codebase
+- Follow PEP 8 style guidelines
+- Implement comprehensive error handling with custom exceptions
+- Use async/await for I/O operations
+- Validate all inputs using Pydantic models
+
+### Security Requirements
+- Implement input sanitization for all user-provided data
+- Use secure random token generation
+- Validate file paths to prevent directory traversal
+- Rate limit API calls to prevent abuse
+- Never expose sensitive information in logs or responses
+
+### Performance Standards
+- Implement caching for expensive operations
+- Use batch processing for multiple API calls
+- Monitor memory usage and implement cleanup
+- Optimize for large datasets with chunked processing
+- Profile operations and track performance metrics
+
+### Testing Standards
+- Maintain 100% test coverage for critical components
+- Test all validation rules and edge cases
+- Include integration tests for external API calls
+- Mock external dependencies in unit tests
+- Use pytest fixtures for test data setup
+
+### Documentation Standards
+- Include comprehensive docstrings for all functions and classes
+- Maintain up-to-date README with setup instructions
+- Document API endpoints and request/response formats
+- Include usage examples in docstrings
+- Keep inline comments focused on "why" not "what"
+
+### Architecture Standards
+- Follow SOLID principles in class design
+- Use dependency injection for better testability
+- Implement proper separation of concerns
+- Design for extensibility with plugin architectures
+- Use factory patterns for object creation
