@@ -15,16 +15,15 @@ jobs:
           mv New-AI-Agent/ai_coding_agent ./ai-coding-agent
           ls -la ai-coding-agent
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.11'
 
       - name: Install dependencies
         run: |
           pip install --upgrade pip
           pip install -r ai-coding-agent/requirements.txt
-
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
       - name: Run AI Agent CLI
         run: |
           python -m ai_coding_agent.chat
