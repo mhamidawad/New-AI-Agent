@@ -1,4 +1,4 @@
-name: Run MOe AI Agent CLI
+name: New Run MOe AI Agent CLI
 
 on:
   workflow_dispatch:  # Allows manual trigger from GitHub UI
