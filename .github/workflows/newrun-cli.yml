@@ -23,7 +23,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+          cd ai-coding-agent
 
       - name: Run AI Agent CLI in Chat Mode
-        run: cd ai-coding-agent
-        python -m ai_coding_agent cl
+        run: python -m ai_coding_agent cl
