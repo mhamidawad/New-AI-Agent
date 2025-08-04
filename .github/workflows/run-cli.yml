@@ -50,3 +50,6 @@ jobs:
         run: |
           pwd
           python --version
+
+          - name Run the App
+          - run: cd /home/runner/work/New-AI-Agent/
