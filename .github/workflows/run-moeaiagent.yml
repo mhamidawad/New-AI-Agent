@@ -1,8 +1,7 @@
 name: MOe AI Agent CLI
 
 on:
-  ai-coding-agent: 
-  workflow_dispatch:  # Manual trigger from GitHub UI
+workflow_dispatch:  # Manual trigger from GitHub UI
 
 jobs:
   run-cli:
