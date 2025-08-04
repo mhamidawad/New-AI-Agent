@@ -1,13 +1,11 @@
 name: MOe AI Agent CLI
 
-
 on:
   workflow_dispatch:  # Manual trigger from GitHub UI
 
-
 jobs:
   run-cli:
-    name: Run CLI Agent
+    name: Run AI Chat Agent
     runs-on: ubuntu-latest
 
     env:
@@ -56,6 +54,8 @@ jobs:
             mypy>=1.8.0 \
             pytest>=8.0.0
 
-      - name: Run AI Agent CLI
+      - name: Run AI Agent Chat Mode
         working-directory: New-AI-Agent
-        run: PYTHONPATH=. python -m ai_coding_agent.cli
+        run: |
+          echo "🧠 Starting ai_coding_agent.chat..."
+          PYTHONPATH=. python -m ai_coding_agent.chat
