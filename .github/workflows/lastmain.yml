@@ -14,7 +14,7 @@ jobs:
           git clone --branch ai-coding-agent https://github.com/mhamidawad/New-AI-Agent.git
           mv New-AI-Agent/ai_coding_agent ./ai-coding-agent
           ls -la ai-coding-agent
-          PYTHONPATH=ai-coding-agent python -m ai_coding_agent.chat
+
 
 
 
@@ -32,4 +32,4 @@ jobs:
         working-directory: ai-coding-agent
         run: |
                 python --version
-                python -m ai_coding_agent.cl
+                python -m ai_coding_agent.cli
