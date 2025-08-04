@@ -25,6 +25,4 @@ jobs:
           pip install -r requirements.txt
 
       - name: Run AI Agent CLI in Chat Mode
-        run: ls
-        pwd
-    
+        run: python -m python -m ai_coding_agent cl
