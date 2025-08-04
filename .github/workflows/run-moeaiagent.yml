@@ -55,7 +55,7 @@ jobs:
             pytest>=8.0.0
 
       - name: Run AI Agent Chat Mode
-        working-directory: New-AI-Agent
+        working-directory: New-AI-Agent/ai_coding_agent
         run: |
-          echo "🧠 Starting ai_coding_agent.chat..."
-          PYTHONPATH=. python -m ai_coding_agent.chat
+          echo "🧠 Starting ai_coding_agent.cli..."
+          PYTHONPATH=. python -m ai_coding_agent.cli
