@@ -9,8 +9,7 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      PYTHONPATH:  /opt/hostedtoolcache/Python/3.11.13/x64
-      pythonLocation: /opt/hostedtoolcache/Python/3.11.13/x64
+     pythonLocation: /opt/hostedtoolcache/Python/3.11.13/x64
       PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.11.13/x64/lib/pkgconfig
       Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.13/x64
       Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.13/x64
@@ -56,7 +55,8 @@ jobs:
             pytest>=8.0.0
 
       - name: Run AI Agent Chat Mode
-        working-directory: New-AI-Agent/ai_coding_agent
-        run: python -m ai_coding_agent.cli
+        working-directory: New-AI-Agent
+        run: PYTHONPATH=. python -m ai_coding_agent.cli
+
 
 
