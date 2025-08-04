@@ -27,4 +27,4 @@ jobs:
       - name: Run AI Agent CLI
         run: |
                 python --version
-                python -m ai_coding_agent.chat
+                python -m ai_coding_agent.cl
