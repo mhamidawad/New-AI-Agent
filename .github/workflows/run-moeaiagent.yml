@@ -1,6 +1,7 @@
 name: MOe AI Agent CLI
 
 on:
+  ai-coding-agent: 
   workflow_dispatch:  # Manual trigger from GitHub UI
 
 jobs:
@@ -57,5 +58,5 @@ jobs:
       - name: Run AI Agent CLI
         working-directory: New-AI-Agent
         run: |
-          echo "Running ai_coding_agent.cli ..."
+
           PYTHONPATH=. python -m ai_coding_agent.cli
