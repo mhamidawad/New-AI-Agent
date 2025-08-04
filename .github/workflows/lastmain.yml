@@ -14,7 +14,10 @@ jobs:
           git clone --branch ai-coding-agent https://github.com/mhamidawad/New-AI-Agent.git
           mv New-AI-Agent/ai_coding_agent ./ai-coding-agent
           ls -la ai-coding-agent
-          cd ai-coding-agent
+          PYTHONPATH=ai-coding-agent python -m ai_coding_agent.chat
+
+
+
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -26,6 +29,7 @@ jobs:
 
 
       - name: Run AI Agent CLI
+        working-directory: ai-coding-agent
         run: |
                 python --version
                 python -m ai_coding_agent.cl
