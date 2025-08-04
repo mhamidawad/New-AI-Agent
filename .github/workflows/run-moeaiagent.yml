@@ -8,6 +8,14 @@ jobs:
     name: Run CLI Agent
     runs-on: ubuntu-latest
 
+    env:
+      pythonLocation: /opt/hostedtoolcache/Python/3.11.13/x64
+      PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.11.13/x64/lib/pkgconfig
+      Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.13/x64
+      Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.13/x64
+      Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.13/x64
+      LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.11.13/x64/lib
+
     steps:
       - name: Clone specific branch from GitHub
         run: |
@@ -17,7 +25,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.11'
+          python-version: '3.11.13'
 
       - name: Install dependencies
         working-directory: New-AI-Agent/ai_coding_agent
