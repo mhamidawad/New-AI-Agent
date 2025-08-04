@@ -50,4 +50,3 @@ jobs:
         run: |
           pwd
           python --version
-          python -m ai_coding_agent.chat
