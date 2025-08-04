@@ -56,6 +56,4 @@ jobs:
 
       - name: Run AI Agent CLI
         working-directory: New-AI-Agent
-        run: |
-
-          PYTHONPATH=. python -m ai_coding_agent.cli
+        run: PYTHONPATH=. python -m ai_coding_agent.cli
