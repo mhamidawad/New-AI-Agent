@@ -20,8 +20,11 @@ jobs:
           node-version: '20'
 
       - name: 📦 Install dependencies
-        run: cd ../
-            npm install
+        working-directory: ./New-AI-Agent
+        run: |
+              cd ../
+              echo "Starting dependency installation..."
+              npm install
 
       - name: 🔨 Install VSCE (Visual Studio Code Extension Manager)
         run: npm install -g @vscode/vsce
