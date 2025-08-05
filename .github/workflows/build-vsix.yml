@@ -18,11 +18,23 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '21'
+          
 
-      - name: Initialize and Install
+      - name: Create package.json and install dependencies
         run: |
-          cd ./
-          npm init -y
+	     cd ./
+          # Create a basic package.json file with the required 'engines' field
+          cat << EOF > package.json
+          {
+            "name": "python-ai-agent-extension",
+            "displayName": "Python AI Agent Extension",
+            "description": "A simple VS Code extension for Python AI Agent.",
+            "version": "0.0.1",
+            "engines": {
+              "vscode": "^1.74.0"
+            }
+          }
+          EOF
           npm install
 
       - name: Package the extension into VSIX
