@@ -20,10 +20,9 @@ jobs:
           node-version: '21'
       - name: Create package.json and install dependencies
         run: |
-	      cd ./
-          # Create a basic package.json file with the required 'engines' field using a single echo command.
-          echo '{"name": "python-ai-agent-extension","displayName": "Python AI Agent Extension","description": "A simple VS Code extension for Python AI Agent.","version": "0.0.1","engines": {"vscode": "^1.74.0"}}' > package.json
-          npm install
+		cd ./
+		# Create a basic package.json file with the required 'engines' field using a single echo command.echo '{"name": "python-ai-agent-extension","displayName": "Python AI Agent Extension","description": "A simple VS Code extension for Python AI Agent.","version": "0.0.1","engines": {"vscode": "^1.74.0"}}' > package.json
+          	npm install
 
       - name: Package the extension into VSIX
         run: npx vsce package
