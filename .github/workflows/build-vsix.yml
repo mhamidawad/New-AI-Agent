@@ -23,6 +23,7 @@ jobs:
         
         run: |
               cd ../
+              npm init
               npm install
 
       - name: 🔨 Install VSCE (Visual Studio Code Extension Manager)
