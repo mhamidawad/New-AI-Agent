@@ -11,25 +11,25 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: 🧾 Checkout code
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: 🟢 Setup Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '18'
-    - name: 📦 Initialize and Install
-          run: |
-                cd ./
-                npm init -y
-                npm install
-      - name: 🔨 Install VSCE (Visual Studio Code Extension Manager)
-        run: npm install -g @vscode/vsce
+          cache: 'npm' # This step is added to cache node modules to speed up subsequent builds.
 
-      - name: 📦 Package the extension into VSIX
-        run: vsce package
+      - name: Initialize and Install
+        run: |
+          cd ./
+          npm init -y
+          npm install
 
-      - name: 💾 Upload VSIX artifact
+      - name: Package the extension into VSIX
+        run: npx vsce package
+
+      - name: Upload VSIX artifact
         uses: actions/upload-artifact@v4
         with:
           name: python-ai-agent-extension
