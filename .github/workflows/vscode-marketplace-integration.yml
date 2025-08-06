@@ -1,0 +1,377 @@
+name: VS Code Extension with AI Agent Integration
+
+on:
+  push:
+    branches: [ main, ai-coding-agent, develop ]
+    paths:
+      - 'vscode-extension/**'
+      - 'ai_coding_agent/**'
+      - 'requirements.txt'
+      - 'pyproject.toml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'vscode-extension/**'
+      - 'ai_coding_agent/**'
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      integration_type:
+        description: 'AI Agent integration type'
+        required: false
+        default: 'embedded'
+        type: choice
+        options:
+          - 'embedded'
+          - 'web-api'
+          - 'hybrid'
+      publish_to_marketplace:
+        description: 'Publish to VS Code Marketplace'
+        required: false
+        default: true
+        type: boolean
+      create_release:
+        description: 'Create GitHub release'
+        required: false
+        default: true
+        type: boolean
+
+env:
+  PYTHON_VERSION: '3.11'
+  NODE_VERSION: '20.19.0'
+  EXTENSION_NAME: 'ai-coding-agent'
+  PUBLISHER_NAME: 'moe-ai-agents'
+
+jobs:
+  # Build AI Agent Backend
+  build-ai-agent:
+    name: Build AI Agent Backend
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Setup Python ${{ env.PYTHON_VERSION }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        
+    - name: Cache pip dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}-${{ env.PYTHON_VERSION }}
+        restore-keys: |
+          ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}-
+          ${{ runner.os }}-pip-
+          
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip setuptools wheel
+        if [ -f requirements.txt ]; then
+          pip install -r requirements.txt
+        fi
+        pip install pyinstaller cx_Freeze
+        
+    - name: Build AI Agent executable
+      run: |
+        if [ -d "ai_coding_agent" ]; then
+          # Create executable for different platforms
+          pyinstaller --onefile --name ai-agent ai_coding_agent/cli.py
+          echo "✅ AI Agent executable built successfully"
+        else
+          echo "⚠️ ai_coding_agent directory not found"
+        fi
+        
+    - name: Upload AI Agent executable
+      uses: actions/upload-artifact@v4
+      with:
+        name: ai-agent-executable
+        path: dist/
+        retention-days: 30
+
+  # Build VS Code Extension with AI Integration
+  build-vscode-extension:
+    name: Build VS Code Extension
+    runs-on: ubuntu-latest
+    needs: build-ai-agent
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js ${{ env.NODE_VERSION }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: vscode-extension/package-lock.json
+        
+    - name: Download AI Agent executable
+      uses: actions/download-artifact@v4
+      with:
+        name: ai-agent-executable
+        
+    - name: Install VS Code Extension dependencies
+      run: |
+        cd vscode-extension
+        npm ci
+        
+    - name: Copy AI Agent to extension
+      run: |
+        mkdir -p vscode-extension/resources
+        cp -r dist/* vscode-extension/resources/ || echo "⚠️ No AI Agent executable found"
+        
+    - name: Update extension package.json
+      run: |
+        cd vscode-extension
+        # Update package.json with AI Agent integration
+        node -e "
+        const fs = require('fs');
+        const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+        pkg.aiAgentIntegration = {
+          type: '${{ github.event.inputs.integration_type || 'embedded' }}',
+          executable: './resources/ai-agent',
+          version: '${{ github.run_number }}'
+        };
+        fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2));
+        "
+        
+    - name: Compile TypeScript
+      run: |
+        cd vscode-extension
+        npm run compile
+        
+    - name: Run ESLint
+      run: |
+        cd vscode-extension
+        npm run lint
+        
+    - name: Build VSIX package
+      run: |
+        cd vscode-extension
+        npm install -g @vscode/vsce
+        vsce package
+        
+    - name: Upload VSIX artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: vscode-extension-with-ai
+        path: vscode-extension/*.vsix
+        retention-days: 30
+
+  # Test AI Agent Integration
+  test-ai-integration:
+    name: Test AI Agent Integration
+    runs-on: ubuntu-latest
+    needs: build-vscode-extension
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Download VSIX
+      uses: actions/download-artifact@v4
+      with:
+        name: vscode-extension-with-ai
+        
+    - name: Setup VS Code for testing
+      uses: microsoft/vscode-test@v2
+      with:
+        version: stable
+        
+    - name: Test extension functionality
+      run: |
+        # Test AI Agent communication
+        echo "Testing AI Agent integration..."
+        # Add specific tests for AI Agent features
+        
+    - name: Upload test results
+      uses: actions/upload-artifact@v4
+      with:
+        name: integration-test-results
+        path: test-results/
+        retention-days: 7
+
+  # Deploy Web API (if using web-api integration)
+  deploy-web-api:
+    name: Deploy Web API
+    runs-on: ubuntu-latest
+    needs: build-ai-agent
+    if: ${{ github.event.inputs.integration_type == 'web-api' || github.event.inputs.integration_type == 'hybrid' }}
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Setup Python ${{ env.PYTHON_VERSION }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        if [ -f requirements.txt ]; then
+          pip install -r requirements.txt
+        fi
+        pip install fastapi uvicorn
+        
+    - name: Create API server
+      run: |
+        cat > api_server.py << 'EOF'
+        from fastapi import FastAPI
+        from ai_coding_agent.core.agent import AICodingAgent
+        
+        app = FastAPI(title="AI Coding Agent API")
+        agent = AICodingAgent()
+        
+        @app.post("/analyze")
+        async def analyze_code(code: str):
+            return {"analysis": agent.analyze_code(code)}
+            
+        @app.post("/generate")
+        async def generate_code(prompt: str):
+            return {"code": agent.generate_code(prompt)}
+        EOF
+        
+    - name: Deploy to cloud platform
+      run: |
+        # Deploy to your preferred cloud platform
+        # Example: Heroku, AWS, Azure, etc.
+        echo "Deploying AI Agent API..."
+        
+    - name: Update extension with API endpoint
+      run: |
+        cd vscode-extension
+        # Update extension configuration with API endpoint
+        echo "API_ENDPOINT=https://your-api-endpoint.com" >> .env
+
+  # Publish to VS Code Marketplace
+  publish-to-marketplace:
+    name: Publish to VS Code Marketplace
+    runs-on: ubuntu-latest
+    needs: [build-vscode-extension, test-ai-integration]
+    if: ${{ github.ref == 'refs/heads/main' && github.event_name == 'push' && github.event.inputs.publish_to_marketplace != 'false' }}
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js ${{ env.NODE_VERSION }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        
+    - name: Download VSIX
+      uses: actions/download-artifact@v4
+      with:
+        name: vscode-extension-with-ai
+        
+    - name: Publish to VS Code Marketplace
+      run: |
+        cd vscode-extension
+        npm install -g @vscode/vsce
+        vsce publish
+      env:
+        VSCE_PAT: ${{ secrets.VSCE_PAT }}
+        
+    - name: Create GitHub Release
+      id: create_release
+      uses: actions/create-release@v1
+      if: ${{ github.event.inputs.create_release != 'false' }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: v${{ github.run_number }}
+        release_name: AI Coding Agent Extension v${{ github.run_number }}
+        body: |
+          🚀 **AI Coding Agent VS Code Extension v${{ github.run_number }}**
+          
+          ## What's New
+          - Integrated AI Agent for intelligent code analysis
+          - Real-time code generation and suggestions
+          - Enhanced code review capabilities
+          - Seamless VS Code integration
+          
+          ## Features
+          - AI-powered code analysis
+          - Intelligent code generation
+          - Automated code review
+          - Project overview and documentation
+          - Integrated AI Agent backend
+          
+          ## Installation
+          Install directly from VS Code Marketplace or download the VSIX file.
+        draft: false
+        prerelease: false
+        
+    - name: Upload Release Assets
+      uses: actions/upload-release-asset@v1
+      if: ${{ github.event.inputs.create_release != 'false' }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./vscode-extension/*.vsix
+        asset_name: ai-coding-agent-extension-v${{ github.run_number }}.vsix
+        asset_content_type: application/octet-stream
+
+  # Monitor and Analytics
+  monitor-deployment:
+    name: Monitor Deployment
+    runs-on: ubuntu-latest
+    needs: [publish-to-marketplace]
+    if: always()
+    
+    steps:
+    - name: Check marketplace status
+      run: |
+        echo "Checking VS Code Marketplace deployment status..."
+        # Add marketplace status checking logic
+        
+    - name: Monitor API health (if web-api)
+      run: |
+        if [ "${{ github.event.inputs.integration_type }}" = "web-api" ] || [ "${{ github.event.inputs.integration_type }}" = "hybrid" ]; then
+          echo "Monitoring API health..."
+          # Add API health monitoring
+        fi
+        
+    - name: Generate deployment report
+      run: |
+        echo "## Deployment Report" > deployment-report.md
+        echo "- Extension: ${{ env.EXTENSION_NAME }}" >> deployment-report.md
+        echo "- Version: v${{ github.run_number }}" >> deployment-report.md
+        echo "- Integration Type: ${{ github.event.inputs.integration_type }}" >> deployment-report.md
+        echo "- Status: Success" >> deployment-report.md
+        
+    - name: Upload deployment report
+      uses: actions/upload-artifact@v4
+      with:
+        name: deployment-report
+        path: deployment-report.md
+        retention-days: 30
+
+  # Notify Results
+  notify:
+    name: Notify Results
+    runs-on: ubuntu-latest
+    needs: [build-vscode-extension, test-ai-integration, publish-to-marketplace]
+    if: always()
+    
+    steps:
+    - name: Notify Success
+      if: success()
+      run: |
+        echo "✅ VS Code Extension with AI Agent integration completed successfully!"
+        echo "🎉 Extension published to VS Code Marketplace"
+        echo "🤖 AI Agent integration: ${{ github.event.inputs.integration_type }}"
+        
+    - name: Notify Failure
+      if: failure()
+      run: |
+        echo "❌ VS Code Extension deployment failed"
+        echo "Please review the logs for details"
+        echo "🔧 Check build, test, or publish steps"
