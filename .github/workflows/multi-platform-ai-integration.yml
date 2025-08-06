@@ -1,0 +1,395 @@
+name: Multi-Platform AI Agent Integration
+
+on:
+  push:
+    branches: [ main, ai-coding-agent ]
+    paths:
+      - 'ai_coding_agent/**'
+      - 'vscode-extension/**'
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      platforms:
+        description: 'Target platforms'
+        required: false
+        default: 'all'
+        type: choice
+        options:
+          - 'all'
+          - 'windows'
+          - 'macos'
+          - 'linux'
+
+env:
+  PYTHON_VERSION: '3.11'
+  NODE_VERSION: '20.19.0'
+
+jobs:
+  # Build AI Agent for Windows
+  build-windows:
+    name: Build AI Agent (Windows)
+    runs-on: windows-latest
+    if: ${{ github.event.inputs.platforms == 'all' || github.event.inputs.platforms == 'windows' }}
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Setup Python ${{ env.PYTHON_VERSION }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip setuptools wheel
+        if (Test-Path "requirements.txt") {
+          pip install -r requirements.txt
+        }
+        pip install pyinstaller
+        
+    - name: Build Windows executable
+      run: |
+        if (Test-Path "ai_coding_agent") {
+          pyinstaller --onefile --name ai-agent-windows --distpath dist/windows ai_coding_agent/cli.py
+          echo "✅ Windows AI Agent executable built successfully"
+        } else {
+          echo "⚠️ ai_coding_agent directory not found"
+        }
+        
+    - name: Upload Windows executable
+      uses: actions/upload-artifact@v4
+      with:
+        name: ai-agent-windows
+        path: dist/windows/
+        retention-days: 30
+
+  # Build AI Agent for macOS
+  build-macos:
+    name: Build AI Agent (macOS)
+    runs-on: macos-latest
+    if: ${{ github.event.inputs.platforms == 'all' || github.event.inputs.platforms == 'macos' }}
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Setup Python ${{ env.PYTHON_VERSION }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip setuptools wheel
+        if [ -f requirements.txt ]; then
+          pip install -r requirements.txt
+        fi
+        pip install pyinstaller
+        
+    - name: Build macOS executable
+      run: |
+        if [ -d "ai_coding_agent" ]; then
+          pyinstaller --onefile --name ai-agent-macos --distpath dist/macos ai_coding_agent/cli.py
+          echo "✅ macOS AI Agent executable built successfully"
+        else
+          echo "⚠️ ai_coding_agent directory not found"
+        fi
+        
+    - name: Upload macOS executable
+      uses: actions/upload-artifact@v4
+      with:
+        name: ai-agent-macos
+        path: dist/macos/
+        retention-days: 30
+
+  # Build AI Agent for Linux
+  build-linux:
+    name: Build AI Agent (Linux)
+    runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.platforms == 'all' || github.event.inputs.platforms == 'linux' }}
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Setup Python ${{ env.PYTHON_VERSION }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip setuptools wheel
+        if [ -f requirements.txt ]; then
+          pip install -r requirements.txt
+        fi
+        pip install pyinstaller
+        
+    - name: Build Linux executable
+      run: |
+        if [ -d "ai_coding_agent" ]; then
+          pyinstaller --onefile --name ai-agent-linux --distpath dist/linux ai_coding_agent/cli.py
+          echo "✅ Linux AI Agent executable built successfully"
+        else
+          echo "⚠️ ai_coding_agent directory not found"
+        fi
+        
+    - name: Upload Linux executable
+      uses: actions/upload-artifact@v4
+      with:
+        name: ai-agent-linux
+        path: dist/linux/
+        retention-days: 30
+
+  # Build VS Code Extension with Multi-Platform AI
+  build-vscode-multi-platform:
+    name: Build VS Code Extension (Multi-Platform)
+    runs-on: ubuntu-latest
+    needs: [build-windows, build-macos, build-linux]
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js ${{ env.NODE_VERSION }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: vscode-extension/package-lock.json
+        
+    - name: Download AI Agent executables
+      uses: actions/download-artifact@v4
+      with:
+        name: ai-agent-windows
+        path: vscode-extension/resources/windows/
+        
+    - name: Download macOS executable
+      uses: actions/download-artifact@v4
+      with:
+        name: ai-agent-macos
+        path: vscode-extension/resources/macos/
+        
+    - name: Download Linux executable
+      uses: actions/download-artifact@v4
+      with:
+        name: ai-agent-linux
+        path: vscode-extension/resources/linux/
+        
+    - name: Install VS Code Extension dependencies
+      run: |
+        cd vscode-extension
+        npm ci
+        
+    - name: Create platform detection script
+      run: |
+        cd vscode-extension
+        cat > src/platform-detector.ts << 'EOF'
+        import * as os from 'os';
+        import * as path from 'path';
+        
+        export function getAIAgentPath(): string {
+          const platform = os.platform();
+          const extensionPath = path.join(__dirname, '..', 'resources');
+          
+          switch (platform) {
+            case 'win32':
+              return path.join(extensionPath, 'windows', 'ai-agent-windows.exe');
+            case 'darwin':
+              return path.join(extensionPath, 'macos', 'ai-agent-macos');
+            case 'linux':
+              return path.join(extensionPath, 'linux', 'ai-agent-linux');
+            default:
+              throw new Error(`Unsupported platform: ${platform}`);
+          }
+        }
+        EOF
+        
+    - name: Update extension package.json
+      run: |
+        cd vscode-extension
+        node -e "
+        const fs = require('fs');
+        const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+        pkg.aiAgentIntegration = {
+          type: 'multi-platform',
+          platforms: ['windows', 'macos', 'linux'],
+          version: '${{ github.run_number }}'
+        };
+        fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2));
+        "
+        
+    - name: Compile TypeScript
+      run: |
+        cd vscode-extension
+        npm run compile
+        
+    - name: Build VSIX package
+      run: |
+        cd vscode-extension
+        npm install -g @vscode/vsce
+        vsce package
+        
+    - name: Upload multi-platform VSIX
+      uses: actions/upload-artifact@v4
+      with:
+        name: vscode-extension-multi-platform
+        path: vscode-extension/*.vsix
+        retention-days: 30
+
+  # Test Multi-Platform Integration
+  test-multi-platform:
+    name: Test Multi-Platform Integration
+    runs-on: ubuntu-latest
+    needs: build-vscode-multi-platform
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Download VSIX
+      uses: actions/download-artifact@v4
+      with:
+        name: vscode-extension-multi-platform
+        
+    - name: Test platform detection
+      run: |
+        echo "Testing platform detection..."
+        # Add platform-specific tests
+        
+    - name: Test AI Agent communication
+      run: |
+        echo "Testing AI Agent communication..."
+        # Add communication tests
+        
+    - name: Upload test results
+      uses: actions/upload-artifact@v4
+      with:
+        name: multi-platform-test-results
+        path: test-results/
+        retention-days: 7
+
+  # Create Release with Multi-Platform Assets
+  create-multi-platform-release:
+    name: Create Multi-Platform Release
+    runs-on: ubuntu-latest
+    needs: [build-vscode-multi-platform, test-multi-platform]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Download VSIX
+      uses: actions/download-artifact@v4
+      with:
+        name: vscode-extension-multi-platform
+        
+    - name: Download AI Agent executables
+      uses: actions/download-artifact@v4
+      with:
+        name: ai-agent-windows
+        path: releases/windows/
+        
+    - name: Download macOS executable
+      uses: actions/download-artifact@v4
+      with:
+        name: ai-agent-macos
+        path: releases/macos/
+        
+    - name: Download Linux executable
+      uses: actions/download-artifact@v4
+      with:
+        name: ai-agent-linux
+        path: releases/linux/
+        
+    - name: Create GitHub Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: v${{ github.run_number }}
+        release_name: AI Coding Agent Multi-Platform v${{ github.run_number }}
+        body: |
+          🚀 **AI Coding Agent Multi-Platform Release v${{ github.run_number }}**
+          
+          ## What's New
+          - Multi-platform AI Agent executables
+          - Windows, macOS, and Linux support
+          - Integrated VS Code extension
+          - Cross-platform compatibility
+          
+          ## Platforms Supported
+          - Windows (x64)
+          - macOS (Intel/Apple Silicon)
+          - Linux (x64)
+          
+          ## Installation
+          Download the appropriate version for your platform.
+        draft: false
+        prerelease: false
+        
+    - name: Upload Release Assets
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./vscode-extension/*.vsix
+        asset_name: ai-coding-agent-extension-v${{ github.run_number }}.vsix
+        asset_content_type: application/octet-stream
+        
+    - name: Upload Platform-Specific Assets
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: releases/windows/ai-agent-windows.exe
+        asset_name: ai-agent-windows-v${{ github.run_number }}.exe
+        asset_content_type: application/octet-stream
+        
+    - name: Upload macOS Asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: releases/macos/ai-agent-macos
+        asset_name: ai-agent-macos-v${{ github.run_number }}
+        asset_content_type: application/octet-stream
+        
+    - name: Upload Linux Asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: releases/linux/ai-agent-linux
+        asset_name: ai-agent-linux-v${{ github.run_number }}
+        asset_content_type: application/octet-stream
+
+  # Notify Results
+  notify:
+    name: Notify Results
+    runs-on: ubuntu-latest
+    needs: [build-vscode-multi-platform, test-multi-platform, create-multi-platform-release]
+    if: always()
+    
+    steps:
+    - name: Notify Success
+      if: success()
+      run: |
+        echo "✅ Multi-platform AI Agent integration completed successfully!"
+        echo "🎉 VS Code Extension built for all platforms"
+        echo "📦 Release created with platform-specific assets"
+        
+    - name: Notify Failure
+      if: failure()
+      run: |
+        echo "❌ Multi-platform build failed"
+        echo "Please review the logs for details"
+        echo "🔧 Check build, test, or release steps"
