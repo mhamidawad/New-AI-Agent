@@ -20,7 +20,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '18'
+          node-version: '22'
 
       - name: Install Dependencies
         run: npm install openai
@@ -30,6 +30,12 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: node generate.js
 
+      - name: Verify the new key
+        run: |
+            export OOPENAI_API_KEY=$newKey
+            curl https://api.openai.com/v1/models \
+            -H "Authorization: Bearer $OOPENAI_API_KEY"
+      
       - name: Commit and Push changes
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
