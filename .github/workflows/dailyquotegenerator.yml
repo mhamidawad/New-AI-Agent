@@ -15,10 +15,10 @@ jobs:
 
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: '22'
 
@@ -32,7 +32,8 @@ jobs:
 
       - name: Verify the new key
         run: |
-            export OOPENAI_API_KEY=$newKey
+            echo "Our key is".$newKey \
+            export OOPENAI_API_KEY=$newKey \
             curl https://api.openai.com/v1/models \
             -H "Authorization: Bearer $OOPENAI_API_KEY"
       
