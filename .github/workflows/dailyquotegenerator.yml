@@ -1,5 +1,5 @@
 name: Daily Quote Generator
-"type": "module",
+
 on:
   schedule:
     # Jeden Tag um 06:00 Uhr UTC
