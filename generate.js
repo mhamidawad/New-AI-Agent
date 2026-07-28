@@ -20,9 +20,20 @@ function generateKey() {
   const base64url = randomBytes.toString('base64url').replace(/=+$/, '');
   return `${PREFIX}${base64url}`;
 }
+async function verifyApiKey(generateKey) {  
+  const response = await fetch(`https://api.openai.com/v1/models/`, { 
+    headers: {     
+      Authorization: `Bearer ${generateKey}`, 
+    },  
+  });  
+  if (!response.ok) {   
+    const error = await response.text();  
+                     throw new Error(`API key verification failed (${response.status}): ${error}`);  }  
+  return response.json();
+}
 
-/**
- * Generates multiple keys.
+
+ /*Generates multiple keys.
  * @param {number} count - Number of keys to generate.
  * @returns {string[]} Array of generated API keys.
  */
