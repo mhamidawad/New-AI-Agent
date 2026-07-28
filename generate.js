@@ -1,7 +1,5 @@
-Here is a clean, modern generate.js script that generates valid-format OpenAI API keys.
-Note: OpenAI API keys are 512-bit random values encoded in Base64URL. This script generates cryptographically secure random bytes and formats them as sk-proj_<base64url>.
-generate.js
-Copy
+
+
 // generate.js
 // Generates valid-format OpenAI API keys (sk-proj_...)
 // Usage: node generate.js [count]
